@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>US States & Capitals Quiz Map</title>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson@3"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; }
+        h1 { color: #2c3e50; margin-top: 20px; }
+        #map-container { width: 900px; height: 600px; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
+        .state { fill: #3498db; stroke: #fff; stroke-width: 1px; cursor: pointer; transition: fill 0.3s; }
+        .state:hover { fill: #2980b9; }
+        .state.active { fill: #e74c3c; }
+        #info-card {
+            position: absolute; bottom: 20px; right: 20px; width: 250px; padding: 20px;
+            background: rgba(255, 255, 255, 0.95); border-left: 5px solid #e74c3c;
+            box-shadow: -5px 5px 15px rgba(0,0,0,0.1); border-radius: 4px; display: none;
+        }
+        #info-card h2 { margin: 0; color: #333; font-size: 1.5rem; }
+        #info-card p { margin: 5px 0; color: #666; font-size: 1.1rem; }
+        .hint { margin-top: 10px; color: #7f8c8d; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <h1>US Capitals Study Map</h1>
+    <p class="hint">Click a state to see its Capital and Initials!</p>
+
+    <div id="map-container">
+        <div id="info-card">
+            <h2 id="state-name">State</h2>
+            <p><strong>Capital:</strong> <span id="state-capital">-</span></p>
+            <p><strong>Initials:</strong> <span id="state-initials">-</span></p>
+        </div>
+    </div>
+
+    <script>
+        const stateData = {
+            "Alabama": { cap: "Montgomery", init: "AL" }, "Alaska": { cap: "Juneau", init: "AK" },
+            "Arizona": { cap: "Phoenix", init: "AZ" }, "Arkansas": { cap: "Little Rock", init: "AR" },
+            "California": { cap: "Sacramento", init: "CA" }, "Colorado": { cap: "Denver", init: "CO" },
+            "Connecticut": { cap: "Hartford", init: "CT" }, "Delaware": { cap: "Dover", init: "DE" },
+            "Florida": { cap: "Tallahassee", init: "FL" }, "Georgia": { cap: "Atlanta", init: "GA" },
+            "Hawaii": { cap: "Honolulu", init: "HI" }, "Idaho": { cap: "Boise", init: "ID" },
+            "Illinois": { cap: "Springfield", init: "IL" }, "Indiana": { cap: "Indianapolis", init: "IN" },
+            "Iowa": { cap: "Des Moines", init: "IA" }, "Kansas": { cap: "Topeka", init: "KS" },
+            "Kentucky": { cap: "Frankfort", init: "KY" }, "Louisiana": { cap: "Baton Rouge", init: "LA" },
+            "Maine": { cap: "Augusta", init: "ME" }, "Maryland": { cap: "Annapolis", init: "MD" },
+            "Massachusetts": { cap: "Boston", init: "MA" }, "Michigan": { cap: "Lansing", init: "MI" },
+            "Minnesota": { cap: "St. Paul", init: "MN" }, "Mississippi": { cap: "Jackson", init: "MS" },
+            "Missouri": { cap: "Jefferson City", init: "MO" }, "Montana": { cap: "Helena", init: "MT" },
+            "Nebraska": { cap: "Lincoln", init: "NE" }, "Nevada": { cap: "Carson City", init: "NV" },
+            "New Hampshire": { cap: "Concord", init: "NH" }, "New Jersey": { cap: "Trenton", init: "NJ" },
+            "New Mexico": { cap: "Santa Fe", init: "NM" }, "New York": { cap: "Albany", init: "NY" },
+            "North Carolina": { cap: "Raleigh", init: "NC" }, "North Dakota": { cap: "Bismarck", init: "ND" },
+            "Ohio": { cap: "Columbus", init: "OH" }, "Oklahoma": { cap: "Oklahoma City", init: "OK" },
+            "Oregon": { cap: "Salem", init: "OR" }, "Pennsylvania": { cap: "Harrisburg", init: "PA" },
+            "Rhode Island": { cap: "Providence", init: "RI" }, "South Carolina": { cap: "Columbia", init: "SC" },
+            "South Dakota": { cap: "Pierre", init: "SD" }, "Tennessee": { cap: "Nashville", init: "TN" },
+            "Texas": { cap: "Austin", init: "TX" }, "Utah": { cap: "Salt Lake City", init: "UT" },
+            "Vermont": { cap: "Montpelier", init: "VT" }, "Virginia": { cap: "Richmond", init: "VA" },
+            "Washington": { cap: "Olympia", init: "WA" }, "West Virginia": { cap: "Charleston", init: "WV" },
+            "Wisconsin": { cap: "Madison", init: "WI" }, "Wyoming": { cap: "Cheyenne", init: "WY" }
+        };
+
+        const width = 900, height = 600;
+        const svg = d3.select("#map-container").append("svg")
+            .attr("width", width).attr("height", height);
+
+        const projection = d3.geoAlbersUsa().translate([width / 2, height / 2]).scale(1000);
+        const path = d3.geoPath().projection(projection);
+
+        d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json").then(us => {
+            svg.append("g")
+                .selectAll("path")
+                .data(topojson.feature(us, us.objects.states).features)
+                .enter().append("path")
+                .attr("class", "state")
+                .attr("d", path)
+                .on("click", function(event, d) {
+                    d3.selectAll(".state").classed("active", false);
+                    d3.select(this).classed("active", true);
+                    
+                    const name = d.properties.name;
+                    const data = stateData[name];
+                    
+                    if(data) {
+                        document.getElementById("info-card").style.display = "block";
+                        document.getElementById("state-name").innerText = name;
+                        document.getElementById("state-capital").innerText = data.cap;
+                        document.getElementById("state-initials").innerText = data.init;
+                    }
+                });
+        });
+    </script>
+</body>
+</html>

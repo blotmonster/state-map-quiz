@@ -3,37 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>US States & Capitals Quiz Map</title>
+    <title>US States & Capitals Map</title>
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
     <script src="https://cdn.jsdelivr.net/npm/topojson@3"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; }
-        h1 { color: #2c3e50; margin-top: 20px; }
-        #map-container { width: 900px; height: 600px; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
-        .state { fill: #3498db; stroke: #fff; stroke-width: 1px; cursor: pointer; transition: fill 0.3s; }
-        .state:hover { fill: #2980b9; }
-        .state.active { fill: #e74c3c; }
-        #info-card {
-            position: absolute; bottom: 20px; right: 20px; width: 250px; padding: 20px;
-            background: rgba(255, 255, 255, 0.95); border-left: 5px solid #e74c3c;
-            box-shadow: -5px 5px 15px rgba(0,0,0,0.1); border-radius: 4px; display: none;
+        :root { --primary: #2563eb; --accent: #ef4444; --bg: #f8fafc; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        h1 { margin: 20px 0 5px 0; font-size: 1.5rem; color: #1e293b; text-align: center; }
+        .hint { color: #64748b; margin-bottom: 20px; font-size: 0.9rem; }
+        
+        #map-container { 
+            width: 95%; max-width: 900px; background: white; border-radius: 12px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; 
+            padding: 10px; box-sizing: border-box;
         }
-        #info-card h2 { margin: 0; color: #333; font-size: 1.5rem; }
-        #info-card p { margin: 5px 0; color: #666; font-size: 1.1rem; }
-        .hint { margin-top: 10px; color: #7f8c8d; font-style: italic; }
+        svg { width: 100%; height: auto; }
+        .state { fill: #cbd5e1; stroke: #fff; stroke-width: 1px; cursor: pointer; transition: fill 0.2s; }
+        .state:hover { fill: #94a3b8; }
+        .state.active { fill: var(--primary); }
+
+        #info-card {
+            margin-top: 20px; width: 95%; max-width: 400px;
+            background: white; padding: 15px; border-radius: 12px;
+            border-top: 4px solid var(--primary);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            text-align: center; display: none;
+        }
+        #info-card h2 { margin: 0; color: #1e293b; }
+        #info-card p { margin: 8px 0; font-size: 1.1rem; color: #475569; }
+        .label { font-weight: bold; color: var(--primary); }
     </style>
 </head>
 <body>
 
-    <h1>US Capitals Study Map</h1>
-    <p class="hint">Click a state to see its Capital and Initials!</p>
+    <h1>US State Capitals Study Tool</h1>
+    <p class="hint">Tap a state to reveal its details</p>
 
-    <div id="map-container">
-        <div id="info-card">
-            <h2 id="state-name">State</h2>
-            <p><strong>Capital:</strong> <span id="state-capital">-</span></p>
-            <p><strong>Initials:</strong> <span id="state-initials">-</span></p>
-        </div>
+    <div id="map-container"></div>
+
+    <div id="info-card">
+        <h2 id="state-name">State</h2>
+        <p><span class="label">Capital:</span> <span id="state-capital"></span></p>
+        <p><span class="label">Initials:</span> <span id="state-initials"></span></p>
     </div>
 
     <script>
@@ -65,11 +76,11 @@
             "Wisconsin": { cap: "Madison", init: "WI" }, "Wyoming": { cap: "Cheyenne", init: "WY" }
         };
 
-        const width = 900, height = 600;
+        const width = 960, height = 600;
         const svg = d3.select("#map-container").append("svg")
-            .attr("width", width).attr("height", height);
+            .attr("viewBox", `0 0 ${width} ${height}`);
 
-        const projection = d3.geoAlbersUsa().translate([width / 2, height / 2]).scale(1000);
+        const projection = d3.geoAlbersUsa().translate([width / 2, height / 2]).scale(1200);
         const path = d3.geoPath().projection(projection);
 
         d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json").then(us => {
@@ -91,6 +102,11 @@
                         document.getElementById("state-name").innerText = name;
                         document.getElementById("state-capital").innerText = data.cap;
                         document.getElementById("state-initials").innerText = data.init;
+                        
+                        // Scroll to card on small screens
+                        if(window.innerWidth < 600) {
+                            document.getElementById("info-card").scrollIntoView({ behavior: 'smooth' });
+                        }
                     }
                 });
         });
